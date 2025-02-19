@@ -108,17 +108,24 @@
         let usdJpyRate = 150;
 
         function fetchUsdJpyRate() {
-            fetch('https://api.exchangerate-api.com/v4/latest/USD')
-                .then(response => response.json())
-                .then(data => {
-                    usdJpyRate = data.rates.JPY;
-                    document.getElementById('usdJpyRate').innerText = usdJpyRate.toFixed(2);
-                })
-                .catch(error => {
-                    console.error("USD/JPYレートの取得に失敗", error);
-                    document.getElementById('usdJpyRate').innerText = "エラー";
-                });
-        }
+    fetch('https://api.exchangerate-api.com/v4/latest/USD')
+        .then(response => response.json())
+        .then(data => {
+            usdJpyRate = data.rates.JPY;
+            document.getElementById('usdJpyRate').innerText = usdJpyRate.toFixed(2);
+        })
+        .catch(error => {
+            console.error("USD/JPYレートの取得に失敗", error);
+            document.getElementById('usdJpyRate').innerText = "エラー";
+        });
+}
+
+// ページを開いたら1回取得
+fetchUsdJpyRate();
+
+// 1分ごとに最新のレートを取得
+setInterval(fetchUsdJpyRate, 60000);
+
         
         function toggleRiskInput() {
             let riskType = document.getElementById('riskType').value;
