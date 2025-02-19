@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FX ロット計算機</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 50px;
+        }
+        input, select {
+            margin: 10px;
+            padding: 8px;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h2>FX ロット計算機</h2>
+    <label>証拠金（口座残高）: <input type="number" id="capital" placeholder="円/ドル"></label><br>
+    
+    <label>損失許容方法: 
+        <select id="riskType" onchange="toggleRiskInput()">
+            <option value="percent">パーセンテージ（%）</option>
+            <option value="amount" selected>金額（円/ドル）</option>
+        </select>
+    </label><br>
+    
+    <label id="riskPercentLabel" style="display: none;">リスク許容割合（%）: <input type="number" id="riskPercent" placeholder="%"></label><br>
+    <label id="riskAmountLabel">リスク許容金額: <input type="number" id="riskAmount" placeholder="円/ドル"></label><br>
+    
+    <label>ストップロス（pips）: <input type="number" id="stopLoss" placeholder="pips"></label><br>
+    <label>口座通貨: 
+        <select id="accountCurrency" onchange="fetchUsdJpyRate()">
+            <option value="JPY">円建て</option>
+            <option value="USD">ドル建て</option>
+        </select>
+    </label><br>
+    <label>通貨タイプ:
+        <select id="currencyType">
+            <option value="dollar">ドルストレート（EUR/USD, GBP/USDなど）</option>
+            <option value="yen">クロス円（USD/JPY, EUR/JPYなど）</option>
+            <option value="gold" selected>GOLD（XAU/USD）</option>
+        </select>
+    </label><br>
+    <p>リアルタイムUSD/JPYレート: <span id="usdJpyRate">取得中...</span></p>
+    <button onclick="calculateLot()">計算する</button>
+    <h3>推奨ロットサイズ: <span id="lotSize">-</span> ロット</h3>
+
+    <script>
+        let usdJpyRate = 150; // 初期値（仮）
+
+        function fetchUsdJpyRate() {
+            fetch('https://api.exchangerate-api.com/v4/latest/USD')
+                .then(response => response.json())
+                .then(data => {
+                    usdJpyRate = data.rates.JPY;
+                    document.getElementById('usdJpyRate').innerText = usdJpyRate.toFixed(2);
+                })
+                .catch(error => {
+                    console.error("USD/JPYレートの取得に失敗", error);
+                    document.getElementById('usdJpyRate').innerText = "エラー";
+                });
+        }
+        
+        function toggleRiskInput() {
+            let riskType = document.getElementById('riskType').value;
+            if (riskType === "percent") {
+                document.getElementById('riskPercentLabel').style.display = "inline";
+                document.getElementById('riskAmountLabel').style.display = "none";
+            } else {
+                document.getElementById('riskPercentLabel').style.display = "none";
+                document.getElementById('riskAmountLabel').style.display = "inline";
+            }
+        }
+        
+        function calculateLot() {
+            let capital = parseFloat(document.getElementById('capital').value);
+            let riskType = document.getElementById('riskType').value;
+            let stopLoss = parseFloat(document.getElementById('stopLoss').value);
+            let accountCurrency = document.getElementById('accountCurrency').value;
+            let currencyType = document.getElementById('currencyType').value;
+            
+            let riskAmount;
+            if (riskType === "percent") {
+                let riskPercent = parseFloat(document.getElementById('riskPercent').value) / 100;
+                if (isNaN(capital) || isNaN(riskPercent) || capital <= 0 || riskPercent <= 0) {
+                    alert("正しい数値を入力してください！");
+                    return;
+                }
+                riskAmount = capital * riskPercent;
+            } else {
+                riskAmount = parseFloat(document.getElementById('riskAmount').value);
+                if (isNaN(riskAmount) || riskAmount <= 0) {
+                    alert("正しいリスク金額を入力してください！");
+                    return;
+                }
+            }
+            
+            if (accountCurrency === "JPY") {
+                riskAmount /= usdJpyRate; // 円建て口座の場合、ドル換算
+            }
+            
+            let lotSize;
+            if (currencyType === "gold") {
+                lotSize = riskAmount / (stopLoss * 10); // ゴールド用の計算
+            } else if (currencyType === "yen") {
+                lotSize = riskAmount / stopLoss / 100; // クロス円用の計算
+            } else {
+                lotSize = riskAmount / stopLoss / 1000; // ドルスト用の計算
+            }
+            
+            document.getElementById('lotSize').innerText = lotSize.toFixed(2);
+        }
+
+        // 初回レート取得
+        fetchUsdJpyRate();
+    </script>
+</body>
+</html>
+
+
+
