@@ -110,23 +110,30 @@
         let usdJpyRate = 150;
 
       function fetchUsdJpyRate() {
-        fetch('https://api.exchangerate-api.com/v4/latest/USD')
+    fetch('https://www.freeforexapi.com/api/live?pairs=USDJPY')
         .then(response => response.json())
         .then(data => {
-            usdJpyRate = data.rates.JPY;
-            document.getElementById('usdJpyRate').innerText = usdJpyRate.toFixed(2);
+            if (data.rates && data.rates.USDJPY) {
+                usdJpyRate = data.rates.USDJPY.rate; // リアルタイムのレート
+                document.getElementById('usdJpyRate').innerText = usdJpyRate.toFixed(2);
+                console.log("✅ 最新のUSD/JPYレート:", usdJpyRate);
+            } else {
+                console.error("❌ JPYレートが取得できませんでした。");
+                document.getElementById('usdJpyRate').innerText = "取得失敗";
+            }
         })
         .catch(error => {
-            console.error("USD/JPYレートの取得に失敗", error);
+            console.error("❌ USD/JPYレートの取得に失敗", error);
             document.getElementById('usdJpyRate').innerText = "エラー";
         });
 }
 
-        // ページを開いたら1回取得
-        fetchUsdJpyRate();
+// 初回取得
+fetchUsdJpyRate();
 
-        // 1分ごとに最新のレートを取得
-        setInterval(fetchUsdJpyRate, 60000);
+// 1分ごとに更新
+setInterval(fetchUsdJpyRate, 60000);
+
 
         
         function toggleRiskInput() {
