@@ -110,12 +110,17 @@
         let usdJpyRate = 150;
 
       function fetchUsdJpyRate() {
-    fetch('https://query1.finance.yahoo.com/v8/finance/chart/USDJPY=X')
+    fetch('https://api.coingecko.com/api/v3/simple/price?ids=usd&vs_currencies=jpy')
         .then(response => response.json())
         .then(data => {
-            let usdJpyRate = data.chart.result[0].meta.regularMarketPrice;
-            document.getElementById('usdJpyRate').innerText = usdJpyRate.toFixed(2);
-            console.log("✅ 最新のUSD/JPYレート:", usdJpyRate);
+            if (data.usd && data.usd.jpy) {
+                usdJpyRate = data.usd.jpy;
+                document.getElementById('usdJpyRate').innerText = usdJpyRate.toFixed(2);
+                console.log("✅ 最新のUSD/JPYレート:", usdJpyRate);
+            } else {
+                console.error("❌ JPYレートが取得できませんでした。");
+                document.getElementById('usdJpyRate').innerText = "取得失敗";
+            }
         })
         .catch(error => {
             console.error("❌ USD/JPYレートの取得に失敗", error);
@@ -128,6 +133,7 @@ fetchUsdJpyRate();
 
 // 1分ごとに更新
 setInterval(fetchUsdJpyRate, 60000);
+
 
 
         
